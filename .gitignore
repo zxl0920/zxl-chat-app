@@ -1,8 +1,8 @@
 node_modules/
-dist/
 .env.local
 .env
 .DS_Store
 Thumbs.db
 *.log
 .vscode/
+dist/

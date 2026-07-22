@@ -56,51 +56,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
         parameters: {
           result_format: 'message',
-          stream: true,
+          stream: false,
           temperature: 0.7,
         },
       }),
     })
 
-    if (!response.ok || !response.body) {
+    if (!response.ok) {
       return res.status(500).json({ error: 'Failed to fetch from DashScope' })
     }
 
-    res.setHeader('Content-Type', 'text/event-stream')
-    res.setHeader('Cache-Control', 'no-cache')
-    res.setHeader('Connection', 'keep-alive')
+    const data = await response.json()
+    const content = data.output?.choices?.[0]?.message?.content
 
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      buffer += decoder.decode(value, { stream: true })
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.substring(6).trim()
-          if (data === '[DONE]') continue
-
-          try {
-            const json = JSON.parse(data)
-            const content = json.output?.choices?.[0]?.message?.content
-            if (content) {
-              res.write(`data: ${content}\n\n`)
-            }
-          } catch {
-            continue
-          }
-        }
-      }
+    if (content) {
+      res.json({ content })
+    } else {
+      res.status(500).json({ error: 'No response from AI' })
     }
-
-    res.end()
   } catch (error) {
     console.error('Chat API error:', error)
     return res.status(500).json({ error: 'Internal server error' })
