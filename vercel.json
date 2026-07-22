@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "api/chat.ts": {
+      "runtime": "@vercel/node"
+    }
+  },
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
+}
